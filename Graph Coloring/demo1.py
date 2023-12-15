@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-from COP.Graph.GCM import check, graph_color_map
+from GCM import check, graph_color_map
 
 dim = 6
 edges = []
