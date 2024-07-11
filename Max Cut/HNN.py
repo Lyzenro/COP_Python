@@ -29,7 +29,7 @@ def generate_noise(level, num):
         print(repeat_size)
         print(noise, "\n")
     else:
-        noise = np.zeros(shape=num, dtype=np.integer)
+        noise = np.zeros(shape=num, dtype=np.int32)
     return noise
 
 
@@ -48,6 +48,11 @@ class HopfieldNeuralNetwork:
         self.mc_steps = mc_steps
         self.plot_spin = plot_spin
         self.noise = generate_noise(noise, mc_steps)
+        # self.sfb_weight = np.geomspace(101, np.ones(weight.shape[0]), int(mc_steps*0.95)) - 1
+
+        self.sfb_weight = np.linspace(80, np.zeros(weight.shape[0]), int(mc_steps * 0.8))
+        # self.sfb_weight = np.vstack((np.geomspace(64, np.ones(weight.shape[0]), num=7), np.zeros(weight.shape[0])))
+        # self.sfb_weight = self.sfb_weight.repeat((np.array([4/20, 4/20, 3/20, 3/20, 2/20, 2/20, 1/20, 1/20]) * mc_steps).astype(np.int32), axis=0)
 
         if plot_spin:
             self.fig = plt.figure("spin", figsize=(6, 6))
@@ -67,11 +72,19 @@ class HopfieldNeuralNetwork:
             ax.set_yticks([], [])
 
         while step < self.mc_steps:
-
             # update
             # Serial update
+            if step < self.sfb_weight.shape[0]:
+                weight = self.weight - np.diag(self.sfb_weight[step])
+            else:
+                weight = self.weight
+
             for k in range(len(self.neuron)):
-                self.neuron[k] = sign(np.dot(self.weight[k], self.neuron) + self.noise[step])
+                # noise
+                # self.neuron[k] = sign(np.dot(self.weight[k], self.neuron) + self.noise[step])
+
+                # chaotic simulated annealing
+                self.neuron[k] = sign(np.dot(weight[k], self.neuron))
 
             # Parallel update
             # self.neuron = sign(np.dot(self.weight, self.neuron) + self.noise[step])
@@ -216,17 +229,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameter of Ising solver')
     parser.add_argument('--noise_level', default=2, help='level of noise')
     parser.add_argument('--offset_level', default=1, help='offset of coupling')
-    parser.add_argument('--MC_steps', default=800, help='total iteration')
+    parser.add_argument('--MC_steps', default=1000, help='total iteration')
     parser.add_argument('--shape', default=(16, 32), help='shape of spin image')
 
     args = parser.parse_args()
-    # energy_hist(path="./CouplingData/G39.npy",
+    # energy_hist(path="./CouplingMatrix/G39.npy",
     #             noise=args.noise_level,
     #             epochs=100,
     #             mc_steps=args.MC_steps
     #             )
 
-    energy_curve(path="./CouplingData/G39.npy",
+    energy_curve(path="./CouplingMatrix/K2000.npy",
                  noise=args.noise_level,
                  mc_steps=args.MC_steps
                  )

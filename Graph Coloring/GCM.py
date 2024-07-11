@@ -107,7 +107,7 @@ def generate_coupling(vertexes, graph_mode="King"):
     return edge_weight, neighbor_list
 
 
-def graph_color_map(vertex, weight, color, epochs, neighbor_list):
+def graph_color_map(vertex, color, epochs, neighbor_list):
     dim = len(vertex)
     vertex_log = vertex
     energy_log = [system_energy(vertex, neighbor_list)]
@@ -129,20 +129,21 @@ def graph_color_map(vertex, weight, color, epochs, neighbor_list):
             vertex_clone[i] = color_select
 
             loc_energy_new = local_energy(vertex_clone[i], vertex_clone[neighbor_list[i]])
-
+            delta_energy = loc_energy_new - loc_energy_old
             # update
-            if loc_energy_new < loc_energy_old:
+            if delta_energy < 0:
                 vertex = vertex_clone.copy()
-            energy_log.append(system_energy(vertex, neighbor_list))
 
             vertex_log = np.vstack((vertex_log, vertex))
+            energy_log.append(system_energy(vertex, neighbor_list))
+
     return vertex_log, energy_log
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parameter of Graph Color Map')
-    parser.add_argument('--epochs', default=10, help='total iteration')
-    parser.add_argument('--vertexes', default=25, help='number of vertex')
+    parser.add_argument('--epochs', default=5, help='total iteration')
+    parser.add_argument('--vertexes', default=16, help='number of vertex')
     parser.add_argument('--color_value', default=np.array([0, 1, 2, 3]), help='color value')
 
     args = parser.parse_args()
@@ -150,10 +151,9 @@ if __name__ == '__main__':
     spin_coupling, neighbor = generate_coupling(args.vertexes, graph_mode="l")
 
     print("Initial configuration\n", spins, "\n")
-    print("Edge Weight\n", spin_coupling, "\n")
+    # print("Edge Weight\n", spin_coupling, "\n")
 
     spins, energy = graph_color_map(vertex=spins,
-                                    weight=spin_coupling,
                                     color=args.color_value,
                                     epochs=args.epochs,
                                     neighbor_list=neighbor

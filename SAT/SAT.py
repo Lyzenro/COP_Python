@@ -360,18 +360,18 @@ class SAT:
         return self.X, success_log, stop_time - start_time
 
 
-def load_uf2091(file_path):
-    matrix = np.zeros(shape=(91, 20), dtype=np.int32)
+def load_cnf(file_path, scale=(91, 20)):
+    matrix = np.zeros(shape=scale, dtype=np.int32)
     with open(file_path, mode="r") as f:
         context = f.read().replace("0\n", "").replace("\n ", "")
 
-        data = re.findall("91 (.*?) %", context)[0].split(" ")
+        data = re.findall(f"{scale[0]} (.*?) %", context)[0].split(" ")
         data = np.array(list(map(int, data)))
 
-        signs = np.sign(data).reshape(91, 3)
-        indexes = np.abs(data).reshape(91, 3)
+        signs = np.sign(data).reshape(scale[0], 3)
+        indexes = np.abs(data).reshape(scale[0], 3)
 
-        for j in range(91):
+        for j in range(scale[0]):
             for sign, index in (zip(signs[j, :], indexes[j, :])):
                 matrix[j, index - 1] = sign
     return matrix
@@ -391,32 +391,7 @@ if __name__ == '__main__':
     # solution, Success = sat.simulated_annealing(epochs=1000)
     solution, Success, tts = sat.improved_local_search_(epochs=10, searches=10)
     print(solution, Success, tts)
-
     """
-
-    for m in range(10):
-        tot_time = 0
-        satisfied = np.array([])
-        unsatisfied = np.array([])
-        for k in range(1, 1001):
-            # print(f"Solving uf20-0{k}...")
-            path = f"D:/Files/LiRenLong/Code/python_project/SAT_Dataset/UF20-91/uf20-0{k}.cnf"
-
-            sat.A = load_uf2091(path)
-            sat.X = np.random.choice([-1, 1], size=variable)
-            # solution, Success, tts = sat.local_search(epochs=30, searches=10)
-            # solution, Success, tts = sat.walk_solve(epochs=100)
-            # solution, Success, tts = sat.probabilistic_search(epochs=50)
-            solution, Success, tts = sat.modified_local_search(epochs=40, searches=20)
-            # solution, Success, tts = sat.improved_local_search(epochs=10, searches=20)
-            tot_time += tts
-            if max(Success) == clause:
-                satisfied = np.append(satisfied, k)
-            else:
-                unsatisfied = np.append(unsatisfied, k)
-        print(f"Accuracy: {len(satisfied) / 1000}, Average TTS: {tot_time / 1000 : .3f}")
-        np.savetxt("./satisfied.txt", satisfied, fmt="%d")
-        np.savetxt("./unsatisfied.txt", unsatisfied, fmt="%d")
 
     """
     if max(Success) == clause:
@@ -425,6 +400,7 @@ if __name__ == '__main__':
         path = os.path.join(root, f"SAT_{literal}L-{variable}V-{clause}C-{file_num + 1}.txt")
         np.savetxt(path, sat.A, fmt="%d")
     """
+
     """
     plt.plot(np.arange(len(Success)), Success)
     plt.xlabel("epoch")
@@ -433,3 +409,30 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
     """
+
+    # for m in range(10):
+    tot_time = 0
+    satisfied = np.array([])
+    unsatisfied = np.array([])
+    for k in range(1, 101):
+        if k % 100 == 0:
+            print(f"Solving uf{variable}-0{k}...")
+        path = f"../Dataset/SAT/UF{variable}-{clause}/uf{variable}-0{k}.cnf"
+        sat.A = load_cnf(path, scale=(clause, variable))
+        sat.X = np.random.choice([-1, 1], size=variable)
+
+        # solution, Success, tts = sat.walk_solve(epochs=100)
+        # solution, Success, tts = sat.probabilistic_search(epochs=50)
+        # solution, Success, tts = sat.local_search(epochs=30, searches=10)
+        # solution, Success, tts = sat.improved_local_search(epochs=10, searches=20)
+        solution, Success, tts = sat.modified_local_search(epochs=20, searches=20)
+
+        tot_time += tts
+        if max(Success) == clause:
+            satisfied = np.append(satisfied, k)
+        else:
+            unsatisfied = np.append(unsatisfied, k)
+    print(f"Accuracy: {len(satisfied) / 1}%, Average TTS: {tot_time / 100 : .5f}s")
+    print(unsatisfied)
+    # np.savetxt("./satisfied.txt", satisfied, fmt="%d")
+    # np.savetxt("./unsatisfied.txt", unsatisfied, fmt="%d")
